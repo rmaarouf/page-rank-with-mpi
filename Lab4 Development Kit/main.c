@@ -51,7 +51,7 @@ int main (int argc, char* argv[]){
     int size;
     MPI_Comm_size(MPI_COMM_WORLD,&size);
 
-    if(rank == 0){
+   
 	    	// Load the data and simple verification
 
 	     if (get_node_stat(&nodecount, &num_in_links, &num_out_links)) return 254;
@@ -67,8 +67,6 @@ int main (int argc, char* argv[]){
 	    for ( i = 0; i < nodecount; ++i)
 	        r[i] = 1.0 / nodecount;
 	    damp_const = (1.0 - DAMPING_FACTOR) / nodecount;
-    	
-    }
 
 
   	int partition = nodecount/size;
@@ -76,9 +74,14 @@ int main (int argc, char* argv[]){
     int start = rank*partition;
     int end = rank*partition+partition;
     int *disps = malloc(size*sizeof(int));
+    int *partitions = malloc(size*sizeof(int));
     int d;
     for (d=0;d<size;d++){
     	disps[d] = d*partition;
+    }
+
+    for (d=0;d<size;d++){
+        partitions[d] = partition;
     }
     
     // CORE CALCULATION
@@ -94,8 +97,8 @@ int main (int argc, char* argv[]){
                 r[i] += r_pre[nodehead[i].inlinks[j]] / num_out_links[nodehead[i].inlinks[j]];
             r[i] *= DAMPING_FACTOR;
             r[i] += damp_const;
-            MPI_Allgatherv(MPI_IN_PLACE,0,MPI_DOUBLE,&r[0],&partition,disps,MPI_DOUBLE,MPI_COMM_WORLD);
-        }
+       }
+	MPI_Allgatherv(MPI_IN_PLACE,0,MPI_DOUBLE,r,partitions,disps,MPI_DOUBLE,MPI_COMM_WORLD);
     }while(rel_error(r, r_pre, nodecount) >= EPSILON);
     //printf("Program converges at %d th iteration.\n", iterationcount);
 
