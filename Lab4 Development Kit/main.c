@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "Lab4_IO.h"
+#include "timer.h"
 #include <mpi.h>
 #define EPSILON 0.00001
 #define DAMPING_FACTOR 0.85
@@ -32,6 +33,7 @@
 
 
 int main (int argc, char* argv[]){
+    double start_time,end_time;
     struct node *nodehead;
     int nodecount;
     int *num_in_links, *num_out_links;
@@ -44,6 +46,7 @@ int main (int argc, char* argv[]){
     double cst_addapted_threshold;
     double error;
     FILE *fp;
+    GET_TIME(start_time);
     MPI_Init(&argc,&argv);
 
     int rank;
@@ -103,7 +106,9 @@ int main (int argc, char* argv[]){
     //printf("Program converges at %d th iteration.\n", iterationcount);
 
     MPI_Finalize();
-    Lab4_saveoutput(r,nodecount,0);
+    GET_TIME(end_time);
+    double time_elapsed = end_time-start_time;
+    Lab4_saveoutput(r,nodecount,time_elapsed);
     // post processing
     node_destroy(nodehead, nodecount);
     free(num_in_links); free(num_out_links);
