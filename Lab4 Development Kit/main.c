@@ -22,7 +22,7 @@
 // 	fscanf(file_pointer,"%d\n",number_of_nodes);
 
 // 	edges_count_array = calloc(number_of_nodes*sizeof(int));
-	
+
 // 	int src, dest;
 // 	while (!feof(file_pointer)){
 // 		f
@@ -54,17 +54,17 @@ int main (int argc, char* argv[]){
     int size;
     MPI_Comm_size(MPI_COMM_WORLD,&size);
 
-   
+
 	    	// Load the data and simple verification
 
 	     if (get_node_stat(&nodecount, &num_in_links, &num_out_links)) return 254;
 
 	    // Adjust the threshold according to the problem size
 	    cst_addapted_threshold = THRESHOLD;
-	    
+
 	    // Calculate the result
 	    if (node_init(&nodehead, num_in_links, num_out_links, 0, nodecount)) return 254;
-	    
+
 	    r = malloc(nodecount * sizeof(double));
 	    r_pre = malloc(nodecount * sizeof(double));
 	    for ( i = 0; i < nodecount; ++i)
@@ -86,14 +86,16 @@ int main (int argc, char* argv[]){
     for (d=0;d<size;d++){
         partitions[d] = partition;
     }
-    
+
+		if (end+partition > nodecount){
+			end = end + remainder;
+			disps[size-1]=partition+remainder;
+		}
+
     // CORE CALCULATION
     do{
         ++iterationcount;
         vec_cp(r, r_pre, nodecount);
-        if (end+partition > nodecount){
-        	end = end + remainder;
-        }
         for ( i = start; i < end; ++i){
             r[i] = 0;
             for ( j = 0; j < nodehead[i].num_in_links; ++j)
@@ -114,8 +116,3 @@ int main (int argc, char* argv[]){
     free(num_in_links); free(num_out_links);
 
 }
-
-
-
-
-
