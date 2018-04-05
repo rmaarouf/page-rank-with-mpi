@@ -13,20 +13,35 @@
 
 // void load_data()
 // {
-// 	int size;
-// 	FILE *file_pointer;
-// 	int *edges_count_array;
-// 	if ((file_pointer = fopen("data_input","r")) == NULL){
-// 		exit(1);
-// 	}
-// 	fscanf(file_pointer,"%d\n",number_of_nodes);
+// 	int size;#define LAB4_EXTEND
 
-// 	edges_count_array = calloc(number_of_nodes*sizeof(int));
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include "Lab4_IO.h"
+#include "timer.h"
+#include <mpi.h>
+#define EPSILON 0.00001
+#define DAMPING_FACTOR 0.85
 
-// 	int src, dest;
-// 	while (!feof(file_pointer)){
-// 		f
-// 	}
+#define THRESHOLD 0.0001
+
+// void load_data()
+// {
+//  int size;
+//  FILE *file_pointer;
+//  int *edges_count_array;
+//  if ((file_pointer = fopen("data_input","r")) == NULL){
+//      exit(1);
+//  }
+//  fscanf(file_pointer,"%d\n",number_of_nodes);
+
+//  edges_count_array = calloc(number_of_nodes*sizeof(int));
+    
+//  int src, dest;
+//  while (!feof(file_pointer)){
+//      f
+//  }
 
 
 // }
@@ -54,48 +69,46 @@ int main (int argc, char* argv[]){
     int size;
     MPI_Comm_size(MPI_COMM_WORLD,&size);
 
+   
+            // Load the data and simple verification
 
-	    	// Load the data and simple verification
+         if (get_node_stat(&nodecount, &num_in_links, &num_out_links)) return 254;
 
-	     if (get_node_stat(&nodecount, &num_in_links, &num_out_links)) return 254;
-
-	    // Adjust the threshold according to the problem size
-	    cst_addapted_threshold = THRESHOLD;
-
-	    // Calculate the result
-	    if (node_init(&nodehead, num_in_links, num_out_links, 0, nodecount)) return 254;
-
-	    r = malloc(nodecount * sizeof(double));
-	    r_pre = malloc(nodecount * sizeof(double));
-	    for ( i = 0; i < nodecount; ++i)
-	        r[i] = 1.0 / nodecount;
-	    damp_const = (1.0 - DAMPING_FACTOR) / nodecount;
+        // Adjust the threshold according to the problem size
+        cst_addapted_threshold = THRESHOLD;
+        
+        // Calculate the result
+        if (node_init(&nodehead, num_in_links, num_out_links, 0, nodecount)) return 254;
+        
+        r = malloc(nodecount * sizeof(double));
+        r_pre = malloc(nodecount * sizeof(double));
+        for ( i = 0; i < nodecount; ++i)
+            r[i] = 1.0 / nodecount;
+        damp_const = (1.0 - DAMPING_FACTOR) / nodecount;
 
 
-  	int partition = nodecount/size;
-  	int remainder = nodecount % size;
+    int partition = nodecount/size;
+    int remainder = nodecount % size;
     int start = rank*partition;
     int end = rank*partition+partition;
     int *disps = malloc(size*sizeof(int));
     int *partitions = malloc(size*sizeof(int));
     int d;
     for (d=0;d<size;d++){
-    	disps[d] = d*partition;
+        disps[d] = d*partition;
     }
 
     for (d=0;d<size;d++){
         partitions[d] = partition;
     }
-
-		if (end+partition > nodecount){
-			end = end + remainder;
-			disps[size-1]=partition+remainder;
-		}
-
+    
     // CORE CALCULATION
     do{
         ++iterationcount;
         vec_cp(r, r_pre, nodecount);
+        if (end+partition > nodecount){
+            end = end + remainder;
+        }
         for ( i = start; i < end; ++i){
             r[i] = 0;
             for ( j = 0; j < nodehead[i].num_in_links; ++j)
@@ -103,7 +116,7 @@ int main (int argc, char* argv[]){
             r[i] *= DAMPING_FACTOR;
             r[i] += damp_const;
        }
-	MPI_Allgatherv(MPI_IN_PLACE,0,MPI_DOUBLE,r,partitions,disps,MPI_DOUBLE,MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE,0,MPI_DOUBLE,r,partitions,disps,MPI_DOUBLE,MPI_COMM_WORLD);
     }while(rel_error(r, r_pre, nodecount) >= EPSILON);
     //printf("Program converges at %d th iteration.\n", iterationcount);
 
@@ -116,3 +129,4 @@ int main (int argc, char* argv[]){
     free(num_in_links); free(num_out_links);
 
 }
+
